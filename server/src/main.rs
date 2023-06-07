@@ -29,9 +29,9 @@ async fn main() {
     let (tx, _rx) = broadcast::channel(32);
 
     let app = Router::new()
-        .route("/mute", put(mute))
-        .route("/unmute", put(unmute))
-        .route("/ws", get(websocket_handler))
+        .route("/mute", put(send_mute_req))
+        .route("/unmute", put(send_unmute_req))
+        .route("/watch", get(watch_for_req))
         .with_state(Arc::new(AppState { tx }));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
@@ -44,8 +44,7 @@ async fn main() {
         .unwrap();
 }
 
-/// Issue a mute request
-async fn mute(State(state): State<Arc<AppState>>) -> StatusCode {
+async fn send_mute_req(State(state): State<Arc<AppState>>) -> StatusCode {
     tracing::info!("Mute request issued");
 
     match state.tx.send(MuteKind::Mute) {
@@ -58,8 +57,7 @@ async fn mute(State(state): State<Arc<AppState>>) -> StatusCode {
     }
 }
 
-/// Issue a unmute request
-async fn unmute(State(state): State<Arc<AppState>>) -> StatusCode {
+async fn send_unmute_req(State(state): State<Arc<AppState>>) -> StatusCode {
     tracing::info!("Unmute request issued");
 
     match state.tx.send(MuteKind::Unmute) {
@@ -72,14 +70,16 @@ async fn unmute(State(state): State<Arc<AppState>>) -> StatusCode {
     }
 }
 
-async fn websocket_handler(
+/// Using WebSocket
+async fn watch_for_req(
     ws: WebSocketUpgrade,
     State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(|socket| handle_websocket(socket, state))
+    ws.on_upgrade(|socket| handle_req_watcher(socket, state))
 }
 
-async fn handle_websocket(ws: WebSocket, state: Arc<AppState>) {
+/// Using WebSocket
+async fn handle_req_watcher(ws: WebSocket, state: Arc<AppState>) {
     tracing::info!("Connected via WebSocket");
 
     let (mut ws_tx, mut ws_rx) = ws.split();
@@ -92,7 +92,7 @@ async fn handle_websocket(ws: WebSocket, state: Arc<AppState>) {
                     Message::Close(_) => break,
 
                     msg => {
-                        tracing::info!("Ignore a message sent via WebSocket: {:?}", msg);
+                        tracing::info!("Discard a message sent via WebSocket: {:?}", msg);
                     }
                 }
             } else {
