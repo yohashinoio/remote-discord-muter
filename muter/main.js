@@ -1,45 +1,43 @@
 // Set environments
 require("dotenv").config();
 
-const drpc = require("discord-rpc");
-const express = require("express");
+const DRPC = require("discord-rpc");
 
-const env = process.env;
+const dclient = new DRPC.Client({ transport: "ipc" });
 
-const client_id = env.CLIENT_ID;
-const client_secret = env.CLIENT_SECRET;
+dclient.on("ready", () => {
+    const WebSocket = require("ws");
 
-const drpc_client = new drpc.Client({ transport: "ipc" });
+    const uri = `ws://${process.env.SERVER_IP}:3000/watch`;
 
-function serve() {
-    const app = express();
-    const port = 3000;
+    console.log(`Connecting to ${uri}`);
 
-    app.get("/", (_, res) => {
-        drpc_client
-            .getVoiceSettings()
-            .then((e) => {
-                return drpc_client.setVoiceSettings({ mute: !e.mute });
-            })
-            .then(() => {
-                res.sendStatus(200);
-            });
-    });
+    const ws = new WebSocket(uri);
 
-    app.listen(port, "0.0.0.0", () => {
-        console.log(`Listening on http://localhost:${port}`);
-    });
-}
+    ws.onopen = () => {
+        console.log("Connection opened");
 
-drpc_client.on("ready", () => {
-    serve();
+        ws.onclose = () => {
+            console.log("Connection closed");
+        };
+
+        ws.onmessage = (msg) => {
+            if (msg.data === "mute") {
+                // Mute
+                dclient.setVoiceSettings({ mute: true });
+            } else if (msg.data === "unmute") {
+                // Unmute
+                dclient.setVoiceSettings({ mute: false });
+            }
+        };
+    };
 });
 
-drpc_client
+dclient
     .login({
-        clientId: client_id,
-        clientSecret: client_secret,
+        clientId: process.env.CLIENT_ID,
+        clientSecret: process.env.CLIENT_SECRET,
         scopes: ["rpc"],
-        redirectUri: env.REDIRECT_URI,
+        redirectUri: process.env.REDIRECT_URI,
     })
     .catch(console.error);
