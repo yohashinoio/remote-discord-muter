@@ -1,11 +1,11 @@
-FROM rust:latest
+FROM rust:1.62.0-alpine as builder
 
-WORKDIR /app
-
+RUN apk add --no-cache gcc musl-dev
+WORKDIR /work
 COPY . .
-
 RUN cargo build --release
 
-EXPOSE 3000
+FROM scratch
 
-ENTRYPOINT ["./target/release/server"]
+COPY --from=builder /work/target/release/server /usr/local/
+ENTRYPOINT [ "/usr/local/server" ]
