@@ -8,4 +8,4 @@ RUN cargo build --release
 FROM scratch
 
 COPY --from=builder /work/target/release/server /usr/local/
-ENTRYPOINT [ "/usr/local/server" ]
+ENTRYPOINT ["/usr/local/server"]
