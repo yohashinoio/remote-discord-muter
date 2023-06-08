@@ -20,6 +20,22 @@ struct AppState {
     tx: broadcast::Sender<MuteKind>,
 }
 
+// Return 3000 if the PORT environment variable is not set
+fn port() -> u16 {
+    const DEFAULT_PORT: u16 = 3000;
+
+    match std::env::var("PORT") {
+        Ok(port) => match port.parse::<u16>() {
+            Ok(port) => port,
+            Err(_) => {
+                tracing::error!("Invalid port number specified: {}", port);
+                DEFAULT_PORT
+            }
+        },
+        Err(_) => DEFAULT_PORT,
+    }
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
@@ -34,20 +50,7 @@ async fn main() {
         .route("/watch", get(watch_for_req))
         .with_state(Arc::new(AppState { tx }));
 
-    const DEFAULT_PORT: u16 = 3000;
-
-    let port = match std::env::var("PORT") {
-        Ok(port) => match port.parse::<u16>() {
-            Ok(port) => port,
-            Err(_) => {
-                tracing::error!("Invalid port number specified: {}", port);
-                DEFAULT_PORT
-            }
-        },
-        Err(_) => DEFAULT_PORT,
-    };
-
-    let addr = SocketAddr::from(([0, 0, 0, 0], port));
+    let addr = SocketAddr::from(([0, 0, 0, 0], port()));
 
     tracing::info!("Listening on {}", addr);
 
