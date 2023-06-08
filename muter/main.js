@@ -5,10 +5,10 @@ const DRPC = require("discord-rpc");
 
 const dclient = new DRPC.Client({ transport: "ipc" });
 
-dclient.on("ready", () => {
+function connect() {
     const WebSocket = require("ws");
 
-    const uri = `ws://${process.env.SERVER_IP}:3000/watch`;
+    const uri = `wss://${process.env.SERVER_HOSTNAME}/watch`;
 
     console.log(`Connecting to ${uri}`);
 
@@ -19,6 +19,11 @@ dclient.on("ready", () => {
 
         ws.onclose = () => {
             console.log("Connection closed");
+
+            // Try to reconnect
+            // As some deployed sites (e.g. render.com) may sleep periodically
+            console.log("Trying to reconnect...");
+            setTimeout(connect, 5000);
         };
 
         ws.onmessage = (msg) => {
@@ -31,6 +36,10 @@ dclient.on("ready", () => {
             }
         };
     };
+}
+
+dclient.on("ready", () => {
+    connect();
 });
 
 dclient
