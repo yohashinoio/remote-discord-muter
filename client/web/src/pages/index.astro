@@ -1,0 +1,19 @@
+---
+import { PostButton } from "../components/PostButton";
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Remote Discord Muter">
+    <main>
+        <PostButton
+            client:load
+            text="Mute"
+            to={`http://${import.meta.env.PUBLIC_SERVER_HOSTNAME}/mute`}
+        />
+        <PostButton
+            client:load
+            text="Unmute"
+            to={`http://${import.meta.env.PUBLIC_SERVER_HOSTNAME}/unmute`}
+        />
+    </main>
+</Layout>
