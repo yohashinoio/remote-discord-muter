@@ -5,7 +5,7 @@ use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::routing::put;
+use axum::routing::post;
 use axum::{routing::get, Router};
 use futures::{SinkExt, StreamExt};
 use tokio::sync::broadcast;
@@ -45,8 +45,8 @@ async fn main() {
     let (tx, _rx) = broadcast::channel(32);
 
     let app = Router::new()
-        .route("/mute", put(send_mute_req))
-        .route("/unmute", put(send_unmute_req))
+        .route("/mute", post(send_mute_req))
+        .route("/unmute", post(send_unmute_req))
         .route("/watch", get(watch_for_req))
         .with_state(Arc::new(AppState { tx }));
 
