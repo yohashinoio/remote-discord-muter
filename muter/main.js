@@ -17,13 +17,13 @@ function connect() {
     ws.onopen = () => {
         console.log("Connection opened");
 
+        // Measures to be taken for servers that stop without regular access
+        setInterval(() => {
+            fetch(`http://${process.env.SERVER_HOSTNAME}/ok`);
+        }, 300000 /* 5 minutes */);
+
         ws.onclose = () => {
             console.log("Connection closed");
-
-            // Try to reconnect
-            // As some deployed sites (e.g. render.com) may sleep periodically
-            console.log("Trying to reconnect...");
-            setTimeout(connect, 5000);
         };
 
         ws.onmessage = (msg) => {

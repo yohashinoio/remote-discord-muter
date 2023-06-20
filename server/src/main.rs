@@ -9,6 +9,8 @@ use axum::routing::post;
 use axum::{routing::get, Router};
 use futures::{SinkExt, StreamExt};
 use tokio::sync::broadcast;
+use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
+use tracing::Level;
 
 #[derive(Debug, Clone, Copy)]
 enum MuteKind {
@@ -48,7 +50,13 @@ async fn main() {
         .route("/mute", post(send_mute_req))
         .route("/unmute", post(send_unmute_req))
         .route("/watch", get(watch_for_req))
-        .with_state(Arc::new(AppState { tx }));
+        .route("/ok", get(ok))
+        .with_state(Arc::new(AppState { tx }))
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
+                .on_response(DefaultOnResponse::new().level(Level::INFO)),
+        );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port()));
 
@@ -58,6 +66,10 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+}
+
+async fn ok() -> StatusCode {
+    StatusCode::OK
 }
 
 async fn send_mute_req(State(state): State<Arc<AppState>>) -> StatusCode {
