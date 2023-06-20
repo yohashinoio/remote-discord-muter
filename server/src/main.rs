@@ -73,8 +73,6 @@ async fn ok() -> StatusCode {
 }
 
 async fn send_mute_req(State(state): State<Arc<AppState>>) -> StatusCode {
-    tracing::info!("Mute request issued");
-
     match state.tx.send(MuteKind::Mute) {
         Err(e) => {
             tracing::error!("Failed to issue mute request: {}", e);
@@ -86,8 +84,6 @@ async fn send_mute_req(State(state): State<Arc<AppState>>) -> StatusCode {
 }
 
 async fn send_unmute_req(State(state): State<Arc<AppState>>) -> StatusCode {
-    tracing::info!("Unmute request issued");
-
     match state.tx.send(MuteKind::Unmute) {
         Err(e) => {
             tracing::error!("Failed to issue unmute request: {}", e);
