@@ -1,6 +1,7 @@
 // Set environments
 require("dotenv").config();
 
+const { default: axios } = require("axios");
 const DRPC = require("discord-rpc");
 
 const dclient = new DRPC.Client({ transport: "ipc" });
@@ -19,7 +20,7 @@ function connect() {
 
         // Measures to be taken for servers that stop without regular access
         setInterval(() => {
-            fetch(`http://${process.env.SERVER_HOSTNAME}/ok`);
+            axios.get(`http://${process.env.SERVER_HOSTNAME}/ok`);
         }, 300000 /* 5 minutes */);
 
         ws.onclose = () => {
