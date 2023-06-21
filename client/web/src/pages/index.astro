@@ -8,12 +8,12 @@ import Layout from "../layouts/Layout.astro";
         <PostButton
             client:load
             text="Mute"
-            to={`http://${import.meta.env.PUBLIC_SERVER_HOSTNAME}/mute`}
+            to={`https://${import.meta.env.PUBLIC_SERVER_HOSTNAME}/mute`}
         />
         <PostButton
             client:load
             text="Unmute"
-            to={`http://${import.meta.env.PUBLIC_SERVER_HOSTNAME}/unmute`}
+            to={`https://${import.meta.env.PUBLIC_SERVER_HOSTNAME}/unmute`}
         />
     </main>
 </Layout>
