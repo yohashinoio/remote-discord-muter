@@ -237,7 +237,7 @@ impl fmt::Display for ResponseId {
 }
 
 async fn handle_watcher(uuid: Uuid, ws: WebSocket, state: Arc<AppState>) {
-    tracing::info!("Websocket opened");
+    tracing::info!("Websocket opened: {}", uuid);
 
     let (mut ws_tx, mut ws_rx) = ws.split();
 
@@ -345,7 +345,7 @@ async fn handle_watcher(uuid: Uuid, ws: WebSocket, state: Arc<AppState>) {
     tokio::select! {
         // Wait for websocket to close
         _ = ws_task => {
-            tracing::info!("Websocket closed");
+            tracing::info!("Websocket closed: {}", uuid);
         },
 
         _ = mute_task => {
