@@ -22,7 +22,7 @@ use uuid::Uuid;
 enum RequestKind {
     Mute,
     Unmute,
-    GetMuteStatus { resp: oneshot::Sender<bool> },
+    GetMuteSetting { resp: oneshot::Sender<bool> },
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -33,36 +33,52 @@ struct Watcher {
     avatar_id: String,
 }
 
+#[derive(Debug)]
+enum MuteKind {
+    Muted,
+    Unmuted,
+}
+
 struct AppState {
     // For sending various requests to watchers
-    requestors: Mutex<HashMap<Uuid, mpsc::Sender<RequestKind>>>,
+    request_senders: Mutex<HashMap<Uuid, mpsc::Sender<RequestKind>>>,
 
-    watchers_info: Mutex<HashMap<Uuid, Watcher>>,
+    mute_setting_senders: Arc<tokio::sync::Mutex<HashMap<Uuid, mpsc::Sender<MuteKind>>>>,
+
+    watchers: Mutex<HashMap<Uuid, Watcher>>,
 }
 
 impl AppState {
     fn new() -> Self {
         Self {
-            requestors: Mutex::new(HashMap::new()),
-            watchers_info: Mutex::new(HashMap::new()),
+            request_senders: Mutex::new(HashMap::new()),
+            mute_setting_senders: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
+            watchers: Mutex::new(HashMap::new()),
         }
     }
 
     fn get_requestor(&self, uuid: &Uuid) -> Option<mpsc::Sender<RequestKind>> {
-        self.requestors.lock().unwrap().get(uuid).map(|x| x.clone())
+        self.request_senders
+            .lock()
+            .unwrap()
+            .get(uuid)
+            .map(|x| x.clone())
     }
 
     fn add_requestor(&self, uuid: Uuid, sender: mpsc::Sender<RequestKind>) {
-        self.requestors.lock().unwrap().insert(uuid.clone(), sender);
+        self.request_senders
+            .lock()
+            .unwrap()
+            .insert(uuid.clone(), sender);
     }
 
     fn remove_requestor(&self, uuid: &Uuid) {
-        self.requestors.lock().unwrap().remove(uuid).unwrap();
+        self.request_senders.lock().unwrap().remove(uuid).unwrap();
     }
 }
 
 fn get_expose_port() -> u16 {
-    const P: u16 = 3000;
+    const P: u16 = 8080;
 
     match std::env::var("PORT") {
         Ok(port) => match port.parse::<u16>() {
@@ -84,14 +100,15 @@ async fn main() {
         .init();
 
     let app = Router::new()
-        .route("/mute/:uuid", post(send_mute_request))
-        .route("/unmute/:uuid", post(send_unmute_request))
+        .route("/mute/:uuid", post(mute_api))
+        .route("/unmute/:uuid", post(unmute_api))
+        .route("/setting/mute/:uuid", get(get_mute_setting_api))
+        .route("/watchers", get(get_request_watchers_api))
         .route(
             "/watch/:username/:user_id/:avatar_id",
-            get(watch_for_requests),
+            get(watch_mute_request_api),
         )
-        .route("/watchers", get(get_request_watchers))
-        .route("/status/mute/:uuid", get(get_mute_status))
+        .route("/watch/setting/mute/:uuid", get(watch_mute_setting_api))
         .route("/ok", get(ok))
         .with_state(Arc::new(AppState::new()))
         .layer(
@@ -111,46 +128,50 @@ async fn main() {
 }
 
 #[derive(serde::Serialize)]
-struct MuteStatus {
+struct MuteSetting {
     mute: bool,
 }
 
-async fn get_mute_status(
+async fn get_mute_setting_api(
     Path(uuid): Path<Uuid>,
     State(state): State<Arc<AppState>>,
-) -> (StatusCode, Json<MuteStatus>) {
+) -> (StatusCode, Json<MuteSetting>) {
+    get_mute_setting(uuid, state).await
+}
+
+async fn get_mute_setting(uuid: Uuid, state: Arc<AppState>) -> (StatusCode, Json<MuteSetting>) {
     let (resp_tx, resp_rx) = oneshot::channel();
 
     let tx = match state.get_requestor(&uuid) {
         Some(tx) => tx,
         None => {
             tracing::error!("Non-existent uuid: {}", uuid);
-            return (StatusCode::BAD_REQUEST, Json(MuteStatus { mute: false }));
+            return (StatusCode::BAD_REQUEST, Json(MuteSetting { mute: false }));
         }
     };
 
-    if let Err(e) = tx.send(RequestKind::GetMuteStatus { resp: resp_tx }).await {
+    if let Err(e) = tx.send(RequestKind::GetMuteSetting { resp: resp_tx }).await {
         tracing::error!("Failed to send mute request: {}", e);
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(MuteStatus { mute: false }),
+            Json(MuteSetting { mute: false }),
         );
     }
 
     match resp_rx.await {
-        Ok(kind) => (StatusCode::OK, Json(MuteStatus { mute: kind })),
+        Ok(kind) => (StatusCode::OK, Json(MuteSetting { mute: kind })),
 
         Err(_) => {
-            tracing::error!("Getting mute status was cancelled");
-            (StatusCode::NOT_FOUND, Json(MuteStatus { mute: false }))
+            tracing::error!("Getting mute setting was cancelled");
+            (StatusCode::NOT_FOUND, Json(MuteSetting { mute: false }))
         }
     }
 }
 
-async fn get_request_watchers(State(state): State<Arc<AppState>>) -> Json<Vec<Watcher>> {
+async fn get_request_watchers_api(State(state): State<Arc<AppState>>) -> Json<Vec<Watcher>> {
     Json(
         state
-            .watchers_info
+            .watchers
             .lock()
             .unwrap()
             .values()
@@ -163,10 +184,11 @@ async fn ok() -> StatusCode {
     StatusCode::OK
 }
 
-async fn send_mute_request(
-    Path(uuid): Path<Uuid>,
-    State(state): State<Arc<AppState>>,
-) -> StatusCode {
+async fn mute_api(Path(uuid): Path<Uuid>, State(state): State<Arc<AppState>>) -> StatusCode {
+    send_mute_request(uuid, state).await
+}
+
+async fn send_mute_request(uuid: Uuid, state: Arc<AppState>) -> StatusCode {
     let tx = match state.get_requestor(&uuid) {
         Some(tx) => tx,
         None => {
@@ -185,10 +207,11 @@ async fn send_mute_request(
     }
 }
 
-async fn send_unmute_request(
-    Path(uuid): Path<Uuid>,
-    State(state): State<Arc<AppState>>,
-) -> StatusCode {
+async fn unmute_api(Path(uuid): Path<Uuid>, State(state): State<Arc<AppState>>) -> StatusCode {
+    send_unmute_request(uuid, state).await
+}
+
+async fn send_unmute_request(uuid: Uuid, state: Arc<AppState>) -> StatusCode {
     let tx = match state.get_requestor(&uuid) {
         Some(tx) => tx,
         None => {
@@ -207,14 +230,68 @@ async fn send_unmute_request(
     }
 }
 
-async fn watch_for_requests(
+async fn watch_mute_setting_api(
+    Path(uuid): Path<Uuid>,
+    ws: WebSocketUpgrade,
+    State(state): State<Arc<AppState>>,
+) -> impl IntoResponse {
+    ws.on_upgrade(move |socket| watch_mute_setting(uuid, socket, state))
+}
+
+async fn watch_mute_setting(uuid: Uuid, mut ws: WebSocket, state: Arc<AppState>) {
+    if !state.watchers.lock().unwrap().contains_key(&uuid) {
+        tracing::error!(
+            "Tried to watch a mute setting for a uuid that does not exist: {}",
+            uuid
+        );
+        ws.close().await.unwrap();
+        return;
+    }
+
+    let (tx, mut rx) = mpsc::channel(32);
+
+    state.mute_setting_senders.lock().await.insert(uuid, tx);
+
+    // Send current mute setting
+    let (code, mute_setting) = get_mute_setting(uuid, state.clone()).await;
+    if code.is_success() {
+        let setting_s = match mute_setting.0.mute {
+            true => "muted",
+            false => "unmuted",
+        };
+
+        if ws.send(Message::Text(setting_s.to_string())).await.is_err() {
+            tracing::error!("Failed to send mute setting to {}: {}", uuid, setting_s);
+        }
+    } else {
+        tracing::error!("Failed to get current mute setting");
+    }
+
+    while let Some(kind) = rx.recv().await {
+        match kind {
+            MuteKind::Muted => {
+                if ws.send(Message::Text("muted".to_string())).await.is_err() {
+                    tracing::error!("Failed to send mute setting to {}: {}", uuid, "muted");
+                }
+            }
+
+            MuteKind::Unmuted => {
+                if ws.send(Message::Text("unmuted".to_string())).await.is_err() {
+                    tracing::error!("Failed to send mute setting to {}: {}", uuid, "unmuted");
+                }
+            }
+        };
+    }
+}
+
+async fn watch_mute_request_api(
     Path((username, user_id, avatar_id)): Path<(String, String, String)>,
     ws: WebSocketUpgrade,
     State(state): State<Arc<AppState>>,
 ) -> impl IntoResponse {
     let uuid = Uuid::new_v4();
 
-    state.watchers_info.lock().unwrap().insert(
+    state.watchers.lock().unwrap().insert(
         uuid,
         Watcher {
             uuid,
@@ -224,7 +301,7 @@ async fn watch_for_requests(
         },
     );
 
-    ws.on_upgrade(move |socket| handle_watcher(uuid, socket, state))
+    ws.on_upgrade(move |socket| watch_mute_request(uuid, socket, state))
 }
 
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -236,7 +313,7 @@ impl fmt::Display for ResponseId {
     }
 }
 
-async fn handle_watcher(uuid: Uuid, ws: WebSocket, state: Arc<AppState>) {
+async fn watch_mute_request(uuid: Uuid, ws: WebSocket, state: Arc<AppState>) {
     tracing::info!("Websocket opened: {}", uuid);
 
     let (mut ws_tx, mut ws_rx) = ws.split();
@@ -260,6 +337,8 @@ async fn handle_watcher(uuid: Uuid, ws: WebSocket, state: Arc<AppState>) {
     >::new()));
     let cloned_responders = responders.clone();
 
+    let mute_setting_senders = state.mute_setting_senders.clone();
+
     let ws_task = tokio::spawn(async move {
         while let Some(message) = ws_rx.next().await {
             if let Ok(msg) = message {
@@ -275,6 +354,18 @@ async fn handle_watcher(uuid: Uuid, ws: WebSocket, state: Arc<AppState>) {
                         };
 
                         match start {
+                            "muted" => {
+                                if let Some(tx) = mute_setting_senders.lock().await.get(&uuid) {
+                                    tx.send(MuteKind::Muted).await.unwrap();
+                                }
+                            }
+
+                            "unmuted" => {
+                                if let Some(tx) = mute_setting_senders.lock().await.get(&uuid) {
+                                    tx.send(MuteKind::Unmuted).await.unwrap();
+                                }
+                            }
+
                             // Response
                             "RESP" => {
                                 let resp_id = iter.next().unwrap();
@@ -304,7 +395,7 @@ async fn handle_watcher(uuid: Uuid, ws: WebSocket, state: Arc<AppState>) {
         }
     });
 
-    let mute_task = tokio::spawn(async move {
+    let request_task = tokio::spawn(async move {
         while let Some(kind) = rx.recv().await {
             match kind {
                 RequestKind::Mute => {
@@ -323,15 +414,15 @@ async fn handle_watcher(uuid: Uuid, ws: WebSocket, state: Arc<AppState>) {
                     }
                 }
 
-                RequestKind::GetMuteStatus { resp } => {
+                RequestKind::GetMuteSetting { resp } => {
                     let resp_id = ResponseId(Uuid::new_v4());
 
-                    tracing::info!("Request to get mute status (id = {})", resp_id);
+                    tracing::info!("Request to get mute setting (id = {})", resp_id);
 
                     responders.lock().unwrap().insert(resp_id, resp);
 
                     if ws_tx
-                        .send(Message::Text(format!("GET STATUS MUTE {}", resp_id)))
+                        .send(Message::Text(format!("GET SETTING MUTE {}", resp_id)))
                         .await
                         .is_err()
                     {
@@ -348,13 +439,13 @@ async fn handle_watcher(uuid: Uuid, ws: WebSocket, state: Arc<AppState>) {
             tracing::info!("Websocket closed: {}", uuid);
         },
 
-        _ = mute_task => {
+        _ = request_task => {
             // Improbable
             tracing::info!("Empty receivers before WebSocket closes");
         },
     }
 
     // Cleanup
-    state.watchers_info.lock().unwrap().remove(&uuid);
+    state.watchers.lock().unwrap().remove(&uuid);
     state.remove_requestor(&uuid);
 }

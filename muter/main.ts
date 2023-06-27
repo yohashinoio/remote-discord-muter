@@ -1,17 +1,19 @@
 require("dotenv").config();
 
 import WebSocket from "ws";
-import DRPC from "discord-rpc";
+import DRPC, { VoiceSettings } from "discord-rpc";
 import axios from "axios";
 
 const dc = new DRPC.Client({ transport: "ipc" });
 
 dc.on("ready", () => {
-    const ws_uri = `wss://${process.env.SERVER_HOSTNAME}/watch/${dc.user?.username}/${dc.user?.id}/${dc.user?.avatar}`;
+    dc.subscribe("VOICE_SETTINGS_UPDATE", {});
 
-    console.log(`Connecting to ${ws_uri}`);
+    const watch_api = `${process.env.WEBSOCKET_SCHEME}://${process.env.SERVER_HOSTNAME}/watch/${dc.user?.username}/${dc.user?.id}/${dc.user?.avatar}`;
 
-    const ws = new WebSocket(ws_uri);
+    console.log(`Connecting to ${watch_api}`);
+
+    const ws = new WebSocket(watch_api);
 
     ws.onopen = () => {
         console.log("Connection opened");
@@ -20,6 +22,14 @@ dc.on("ready", () => {
         setInterval(() => {
             axios.get(`http://${process.env.SERVER_HOSTNAME}/ok`);
         }, 300000 /* 5 minutes */);
+
+        dc.on("VOICE_SETTINGS_UPDATE", (vs: VoiceSettings) => {
+            if (vs.mute) {
+                ws.send("muted");
+            } else {
+                ws.send("unmuted");
+            }
+        });
 
         ws.onclose = () => {
             console.log("Connection closed");
@@ -30,11 +40,11 @@ dc.on("ready", () => {
 
             const set_mute_setting = (mute: boolean) => {
                 dc.getVoiceSettings()
-                    .then((s) => {
-                        s.mute = mute;
-                        s.input = undefined;
-                        s.output = undefined;
-                        dc.setVoiceSettings(s);
+                    .then((vs) => {
+                        vs.mute = mute;
+                        vs.input = undefined;
+                        vs.output = undefined;
+                        dc.setVoiceSettings(vs);
                     })
                     .catch(() => {
                         console.log("Failed to " + mute ? "mute" : "unmute");
@@ -45,7 +55,7 @@ dc.on("ready", () => {
                 set_mute_setting(true);
             } else if (data === "unmute") {
                 set_mute_setting(false);
-            } else if (data.startsWith("GET STATUS MUTE")) {
+            } else if (data.startsWith("GET SETTING MUTE")) {
                 // Request to get mute status
                 const splited: string[] = data.split(" ");
                 let resp_id = splited[splited.length - 1];
