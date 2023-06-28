@@ -4,7 +4,7 @@ services:
     plan: free
     runtime: docker
     dockerfilePath: ./client/web/Dockerfile
-    dockerContext: ./client
+    dockerContext: ./client/web
     envVars:
       - key: NEXT_PUBLIC_SERVER_HOSTNAME
         fromService:
