@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: client
+    env: docker
+    dockerfilePath: ./client/web/Dockerfile
+    envVars:
+      - key: NEXT_PUBLIC_SERVER_HOSTNAME
+        fromService:
+          type: web
+          name: server
+          property: host
+      - key: NEXT_PUBLIC_HTTP_SCHEME
+        value: https
+      - key: NEXT_PUBLIC_WEBSOCKET_SCHEME
+        value: wss
+
+  - type: web
+    name: server
+    env: docker
+    dockerfilePath: ./server/Dockerfile
