@@ -1,6 +1,7 @@
 services:
   - type: web
     name: client
+    plan: free
     env: docker
     dockerfilePath: ./client/web/Dockerfile
     envVars:
@@ -16,5 +17,6 @@ services:
 
   - type: web
     name: server
+    plan: free
     env: docker
     dockerfilePath: ./server/Dockerfile
