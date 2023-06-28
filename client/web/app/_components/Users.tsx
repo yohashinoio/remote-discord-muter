@@ -44,7 +44,7 @@ const UserCard: React.FC<DiscordUser> = (props) => {
 
 export const Users: React.FC = () => {
   const { data, error, isLoading } = useSWR<DiscordUser[]>(
-    `${process.env.NEXT_PUBLIC_HTTP_SCHEME}://${process.env.NEXT_PUBLIC_SERVER_HOSTNAME}/watchers`,
+    `${process.env.NEXT_PUBLIC_HTTP_SCHEME}://${process.env.NEXT_PUBLIC_SERVER_HOST}:8080/watchers`,
     fetcher
   );
 

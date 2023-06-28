@@ -14,15 +14,15 @@ export const ToggleMuteButton: React.FC = () => {
   const toggle_mute = () => {
     axios.post(
       `${process.env.NEXT_PUBLIC_HTTP_SCHEME}://${
-        process.env.NEXT_PUBLIC_SERVER_HOSTNAME
-      }/${mute_setting ? "unmute" : "mute"}/${current_user?.uuid}`
+        process.env.NEXT_PUBLIC_SERVER_HOST
+      }:8080/${mute_setting ? "unmute" : "mute"}/${current_user?.uuid}`
     );
   };
 
   React.useEffect(() => {
     if (current_user !== undefined) {
       const websocket = new WebSocket(
-        `${process.env.NEXT_PUBLIC_WEBSOCKET_SCHEME}://${process.env.NEXT_PUBLIC_SERVER_HOSTNAME}/watch/setting/mute/${current_user?.uuid}`
+        `${process.env.NEXT_PUBLIC_WEBSOCKET_SCHEME}://${process.env.NEXT_PUBLIC_SERVER_HOST}:8080/watch/setting/mute/${current_user?.uuid}`
       );
 
       const onMessage = (event: MessageEvent<string>) => {
