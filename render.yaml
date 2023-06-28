@@ -2,8 +2,9 @@ services:
   - type: web
     name: client
     plan: free
-    env: docker
+    runtime: docker
     dockerfilePath: ./client/web/Dockerfile
+    dockerContext: ./client
     envVars:
       - key: NEXT_PUBLIC_SERVER_HOSTNAME
         fromService:
@@ -18,5 +19,6 @@ services:
   - type: web
     name: server
     plan: free
-    env: docker
+    runtime: docker
     dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
