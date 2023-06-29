@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { IconButton, Spinner } from "@chakra-ui/react";
+import { IconButton, Skeleton, Spinner } from "@chakra-ui/react";
 import { BsMic, BsMicMute } from "react-icons/bs";
 import axios from "axios";
 import { CurrentUserContext } from "../_util/context";
@@ -42,8 +42,8 @@ export const ToggleMuteButton: React.FC = () => {
     }
   }, [current_user]);
 
-  if (mute_setting === null) {
-    return <Spinner />;
+  if (current_user === undefined || mute_setting === null) {
+    return <Skeleton h={10} w={10} />;
   }
 
   return (

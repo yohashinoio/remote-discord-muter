@@ -12,6 +12,8 @@ import {
   MenuItem,
   MenuList,
   Skeleton,
+  SkeletonCircle,
+  SkeletonText,
   Text,
 } from "@chakra-ui/react";
 import { ChevronDownIcon } from "@chakra-ui/icons";
@@ -43,9 +45,20 @@ const UserCard: React.FC<DiscordUser> = (props) => {
   );
 };
 
-export const Users: React.FC = () => {
-  console.log(`${server_origin_http}/watchers`);
+const DummyUserCard: React.FC = () => {
+  return (
+    <Flex>
+      <Center>
+        <SkeletonCircle size={"32px"} />
+      </Center>
+      <Center ml={2}>
+        <SkeletonText width={"28"} noOfLines={1} skeletonHeight={3} />
+      </Center>
+    </Flex>
+  );
+};
 
+export const Users: React.FC = () => {
   const { data, error, isLoading } = useSWR<DiscordUser[]>(
     `${server_origin_http}/watchers`,
     fetcher
@@ -64,19 +77,23 @@ export const Users: React.FC = () => {
   }
 
   return (
-    <Skeleton isLoaded={!isLoading}>
-      <Menu>
-        <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
-          {current_user && <UserCard {...current_user} />}
-        </MenuButton>
-        <MenuList>
-          {data?.map((e) => (
-            <MenuItem onClick={() => setCurrentUser(e)} key={e.user_id}>
-              <UserCard {...e} />
-            </MenuItem>
-          ))}
-        </MenuList>
-      </Menu>
-    </Skeleton>
+    <Menu>
+      <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
+        {isLoading ? (
+          <DummyUserCard />
+        ) : current_user ? (
+          <UserCard {...current_user} />
+        ) : (
+          <DummyUserCard />
+        )}
+      </MenuButton>
+      <MenuList>
+        {data?.map((e) => (
+          <MenuItem onClick={() => setCurrentUser(e)} key={e.user_id}>
+            <UserCard {...e} />
+          </MenuItem>
+        ))}
+      </MenuList>
+    </Menu>
   );
 };

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Users } from "./_components/Users";
-import { Center, Stack } from "@chakra-ui/react";
+import { Center, Skeleton, Stack } from "@chakra-ui/react";
 import { ToggleMuteButton } from "./_components/ToggleMuteButton";
 import { CurrentUserContext } from "./_util/context";
 import { DiscordUser } from "./_util/types";
