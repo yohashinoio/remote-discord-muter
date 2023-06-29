@@ -14,6 +14,7 @@ use axum::{routing::get, Router};
 use futures::channel::oneshot;
 use futures::{SinkExt, StreamExt};
 use tokio::sync::mpsc;
+use tower_http::cors::CorsLayer;
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::Level;
 use uuid::Uuid;
@@ -110,6 +111,7 @@ async fn main() {
         .route("/watch/setting/mute/:uuid", get(watch_mute_setting_api))
         .route("/ok", get(ok))
         .with_state(Arc::new(AppState::new()))
+        .layer(CorsLayer::permissive())
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
