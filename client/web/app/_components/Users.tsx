@@ -19,7 +19,7 @@ import NextImage from "next/image";
 import { CurrentUserContext } from "../_util/context";
 import { fetcher } from "../_util/fetcher";
 import { DiscordUser } from "../_util/types";
-import { http_server_origin } from "../_util/server";
+import { server_origin_http } from "../_util/server";
 
 const UserCard: React.FC<DiscordUser> = (props) => {
   const avatar_src = `https://cdn.discordapp.com/avatars/${props.user_id}/${props.avatar_id}.png`;
@@ -44,10 +44,10 @@ const UserCard: React.FC<DiscordUser> = (props) => {
 };
 
 export const Users: React.FC = () => {
-  console.log(`${http_server_origin}/watchers`);
+  console.log(`${server_origin_http}/watchers`);
 
   const { data, error, isLoading } = useSWR<DiscordUser[]>(
-    `${http_server_origin}/watchers`,
+    `${server_origin_http}/watchers`,
     fetcher
   );
 

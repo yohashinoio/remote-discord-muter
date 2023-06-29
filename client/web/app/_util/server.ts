@@ -1,2 +1,2 @@
-export const http_server_origin = `http://localhost:8080`;
-export const ws_server_origin = `ws://localhost:8080`;
+export const server_origin_http = `http://${process.env.NEXT_PUBLIC_SRV_HOST}:8080`;
+export const server_origin_websocket = `ws://${process.env.NEXT_PUBLIC_SRV_HOST}:8080`;

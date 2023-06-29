@@ -5,7 +5,7 @@ import { IconButton, Spinner } from "@chakra-ui/react";
 import { BsMic, BsMicMute } from "react-icons/bs";
 import axios from "axios";
 import { CurrentUserContext } from "../_util/context";
-import { http_server_origin, ws_server_origin } from "../_util/server";
+import { server_origin_http, server_origin_websocket } from "../_util/server";
 
 export const ToggleMuteButton: React.FC = () => {
   const [mute_setting, setMuteSetting] = React.useState<boolean | null>(null);
@@ -14,7 +14,7 @@ export const ToggleMuteButton: React.FC = () => {
 
   const toggle_mute = () => {
     axios.post(
-      `${http_server_origin}/${mute_setting ? "unmute" : "mute"}/${
+      `${server_origin_http}/${mute_setting ? "unmute" : "mute"}/${
         current_user?.uuid
       }`
     );
@@ -23,7 +23,7 @@ export const ToggleMuteButton: React.FC = () => {
   React.useEffect(() => {
     if (current_user !== undefined) {
       const websocket = new WebSocket(
-        `${ws_server_origin}/watch/setting/mute/${current_user?.uuid}`
+        `${server_origin_websocket}/watch/setting/mute/${current_user?.uuid}`
       );
 
       const onMessage = (event: MessageEvent<string>) => {
