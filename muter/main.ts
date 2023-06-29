@@ -9,7 +9,7 @@ const dc = new DRPC.Client({ transport: "ipc" });
 dc.on("ready", () => {
     dc.subscribe("VOICE_SETTINGS_UPDATE", {});
 
-    const watch_api = `${process.env.WEBSOCKET_SCHEME}://${process.env.SERVER_HOST}:8080/watch/${dc.user?.username}/${dc.user?.id}/${dc.user?.avatar}`;
+    const watch_api = `${process.env.WEBSOCKET_SCHEME}://${process.env.SERVER_HOST_PORT}/watch/${dc.user?.username}/${dc.user?.id}/${dc.user?.avatar}`;
 
     console.log(`Connecting to ${watch_api}`);
 
