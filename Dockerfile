@@ -24,7 +24,6 @@ ENV NEXT_TELEMETRY_DISABLED 1
 
 COPY --from=client_builder /app/next.config.js next.config.js
 COPY --from=client_builder /app/.next .next
-COPY --from=client_builder /app/.env .env
 COPY --from=client_builder /app/public public
 COPY --from=client_builder /app/node_modules node_modules
 COPY --from=client_builder /app/package.json package.json
