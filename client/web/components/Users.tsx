@@ -55,9 +55,13 @@ const DummyUserCard: React.FC = () => {
 };
 
 export const Users: React.FC = () => {
+  let get_watchers_api = `/api/watchers`;
   const { data, error, isLoading } = useSWR<DiscordUser[]>(
-    `/watchers`,
-    fetcher
+    get_watchers_api,
+    (url: string) => {
+      console.log(`GET to ${get_watchers_api}`);
+      return fetcher(url);
+    }
   );
 
   const { current_user, setCurrentUser } = React.useContext(CurrentUserContext);

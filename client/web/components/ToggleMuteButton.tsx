@@ -25,13 +25,31 @@ export const ToggleMuteButton: React.FC = () => {
   const { current_user } = React.useContext(CurrentUserContext);
 
   const toggle_mute = () => {
-    axios.post(`/${mute_setting ? "unmute" : "mute"}/${current_user?.uuid}`);
+    const api = `/api/${mute_setting ? "unmute" : "mute"}/${
+      current_user?.uuid
+    }`;
+
+    console.log(`POST to ${api}`);
+
+    axios.post(api);
   };
 
   React.useEffect(() => {
     if (current_user !== undefined) {
-      const websocket = new WebSocket(
-        `${get_ws_origin()}/watch/setting/mute/${current_user?.uuid}`
+      const api = `${get_ws_origin()}/api/watch/setting/mute/${
+        current_user?.uuid
+      }`;
+
+      console.log(`Try websocket connection to ${api}`);
+
+      const websocket = new WebSocket(api);
+
+      websocket.addEventListener("open", () =>
+        console.log(`Websocket to ${api} opened`)
+      );
+
+      websocket.addEventListener("close", () =>
+        console.log(`Websocket to ${api} closed`)
       );
 
       const onMessage = (event: MessageEvent<string>) => {
