@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import useSWR from "swr";
 import {
@@ -11,17 +9,15 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
-  Skeleton,
   SkeletonCircle,
   SkeletonText,
   Text,
 } from "@chakra-ui/react";
-import { ChevronDownIcon } from "@chakra-ui/icons";
 import NextImage from "next/image";
-import { CurrentUserContext } from "../_util/context";
-import { fetcher } from "../_util/fetcher";
-import { DiscordUser } from "../_util/types";
-import { server_origin_http } from "../_util/server";
+import { fetcher } from "@/utils/fetcher";
+import { ChevronDownIcon } from "@chakra-ui/icons";
+import { DiscordUser } from "@/types/user";
+import { CurrentUserContext } from "@/contexts/user";
 
 const UserCard: React.FC<DiscordUser> = (props) => {
   const avatar_src = `https://cdn.discordapp.com/avatars/${props.user_id}/${props.avatar_id}.png`;
@@ -60,7 +56,7 @@ const DummyUserCard: React.FC = () => {
 
 export const Users: React.FC = () => {
   const { data, error, isLoading } = useSWR<DiscordUser[]>(
-    `${server_origin_http}/watchers`,
+    `/watchers`,
     fetcher
   );
 

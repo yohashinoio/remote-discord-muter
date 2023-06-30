@@ -15,6 +15,7 @@ use futures::channel::oneshot;
 use futures::{SinkExt, StreamExt};
 use tokio::sync::mpsc;
 use tower_http::cors::CorsLayer;
+use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
 use tracing::Level;
 use uuid::Uuid;
@@ -99,6 +100,11 @@ async fn main() {
         .with_max_level(tracing::Level::INFO)
         .init();
 
+    // Serve the client
+    let client_service = ServeDir::new("client")
+        .append_index_html_on_directories(true)
+        .not_found_service(ServeFile::new("client/404.html"));
+
     let app = Router::new()
         .route("/mute/:uuid", post(mute_api))
         .route("/unmute/:uuid", post(unmute_api))
@@ -110,6 +116,7 @@ async fn main() {
         )
         .route("/watch/setting/mute/:uuid", get(watch_mute_setting_api))
         .route("/ok", get(ok))
+        .fallback_service(client_service)
         .with_state(Arc::new(AppState::new()))
         .layer(CorsLayer::permissive())
         .layer(

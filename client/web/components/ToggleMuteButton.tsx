@@ -1,11 +1,23 @@
-"use client";
-
 import React from "react";
-import { IconButton, Skeleton, Spinner } from "@chakra-ui/react";
-import { BsMic, BsMicMute } from "react-icons/bs";
+import { IconButton, Skeleton } from "@chakra-ui/react";
 import axios from "axios";
-import { CurrentUserContext } from "../_util/context";
-import { server_origin_http, server_origin_websocket } from "../_util/server";
+import { BsMicMute, BsMic } from "react-icons/bs";
+import { CurrentUserContext } from "@/contexts/user";
+
+const get_ws_origin = () => {
+  let loc = window.location;
+  let res: string;
+
+  if (loc.protocol === "https:") {
+    res = "wss:";
+  } else {
+    res = "ws:";
+  }
+
+  res += "//" + loc.host;
+
+  return res;
+};
 
 export const ToggleMuteButton: React.FC = () => {
   const [mute_setting, setMuteSetting] = React.useState<boolean | null>(null);
@@ -13,17 +25,13 @@ export const ToggleMuteButton: React.FC = () => {
   const { current_user } = React.useContext(CurrentUserContext);
 
   const toggle_mute = () => {
-    axios.post(
-      `${server_origin_http}/${mute_setting ? "unmute" : "mute"}/${
-        current_user?.uuid
-      }`
-    );
+    axios.post(`/${mute_setting ? "unmute" : "mute"}/${current_user?.uuid}`);
   };
 
   React.useEffect(() => {
     if (current_user !== undefined) {
       const websocket = new WebSocket(
-        `${server_origin_websocket}/watch/setting/mute/${current_user?.uuid}`
+        `${get_ws_origin()}/watch/setting/mute/${current_user?.uuid}`
       );
 
       const onMessage = (event: MessageEvent<string>) => {

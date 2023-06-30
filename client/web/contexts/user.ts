@@ -1,5 +1,5 @@
+import { DiscordUser } from "@/types/user";
 import React from "react";
-import { DiscordUser } from "./types";
 
 export const CurrentUserContext = React.createContext(
   {} as {
