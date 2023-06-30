@@ -54,8 +54,10 @@ export const ToggleMuteButton: React.FC = () => {
 
       const onMessage = (event: MessageEvent<string>) => {
         if (event.data === "muted") {
+          console.log("Muted");
           setMuteSetting(true);
         } else if (event.data === "unmuted") {
+          console.log("Unmuted");
           setMuteSetting(false);
         }
       };
