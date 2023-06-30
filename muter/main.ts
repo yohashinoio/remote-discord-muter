@@ -9,11 +9,11 @@ const dc = new DRPC.Client({ transport: "ipc" });
 const watch_and_handle_mute_request = () => {
     dc.subscribe("VOICE_SETTINGS_UPDATE", {});
 
-    const watch_api = `${process.env.WEBSOCKET_SCHEME}://${process.env.SERVER_HOST_PORT}/api/watch/${dc.user?.username}/${dc.user?.id}/${dc.user?.avatar}`;
+    const api = `${process.env.WEBSOCKET_SCHEME}://${process.env.SERVER_HOST_PORT}/api/watch/${dc.user?.username}/${dc.user?.id}/${dc.user?.avatar}`;
 
-    console.log(`Connecting to ${watch_api}`);
+    console.log(`Connecting to ${api}`);
 
-    const ws = new WebSocket(watch_api);
+    const ws = new WebSocket(api);
 
     ws.onopen = () => {
         console.log("Connection opened");
@@ -78,20 +78,20 @@ const watch_and_handle_mute_request = () => {
 
 dc.on("ready", watch_and_handle_mute_request);
 
-const client_id = process.env.CLIENT_ID;
-const client_secret = process.env.CLIENT_SECRET;
-const redirect_uri = process.env.REDIRECT_URI;
+const client_id = process.env.DISCORD_CLIENT_ID;
+const client_secret = process.env.DISCORD_CLIENT_SECRET;
+const redirect_uri = process.env.DISCORD_REDIRECT_URI;
 
 if (client_id === undefined) {
-    throw new Error("CLIENT_ID environment variable is not set");
+    throw new Error("DISCORD_CLIENT_ID environment variable is not set");
 }
 
 if (client_secret === undefined) {
-    throw new Error("CLIENT_SECRET environment variable is not set");
+    throw new Error("DISCORD_CLIENT_SECRET environment variable is not set");
 }
 
 if (redirect_uri === undefined) {
-    throw new Error("REDIRECT_URI environment variable is not set");
+    throw new Error("DISCORD_REDIRECT_URI environment variable is not set");
 }
 
 dc.login({
