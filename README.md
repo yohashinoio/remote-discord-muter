@@ -44,7 +44,7 @@ The environment variables DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET and DISCORD_R
 
 These can be obtained via the [Discord Developer Portal](https://discord.com/developers/applications).
 
-# Others
+## Others
 
 SERVER_HOST_PORT and WEBSOCKET_SCHEME need not be changed from .example.env if used in a local network.
 
