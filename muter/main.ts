@@ -6,7 +6,7 @@ import axios from "axios";
 
 const dc = new DRPC.Client({ transport: "ipc" });
 
-dc.on("ready", () => {
+const watch_and_handle_mute_request = () => {
     dc.subscribe("VOICE_SETTINGS_UPDATE", {});
 
     const watch_api = `${process.env.WEBSOCKET_SCHEME}://${process.env.SERVER_HOST_PORT}/api/watch/${dc.user?.username}/${dc.user?.id}/${dc.user?.avatar}`;
@@ -33,6 +33,10 @@ dc.on("ready", () => {
 
         ws.onclose = () => {
             console.log("Connection closed");
+
+            console.log("Try to reconnect after 10 seconds...");
+            // Try to reconnect
+            setTimeout(watch_and_handle_mute_request, 10000);
         };
 
         ws.onmessage = (msg) => {
@@ -70,7 +74,9 @@ dc.on("ready", () => {
             }
         };
     };
-});
+};
+
+dc.on("ready", watch_and_handle_mute_request);
 
 const client_id = process.env.CLIENT_ID;
 const client_secret = process.env.CLIENT_SECRET;
