@@ -2,8 +2,6 @@
 
 ## Only in a local network
 
-If you just want to use this from a local network, it is easy.
-
 1. Build and run the Dockerfile in the root
 2. Copy .example.env in /muter and rename it to .env
 3. Fill in the .env ([details](#dc))
@@ -32,7 +30,7 @@ From here, please work on a computer that is actually running Discord Desktop.
 7. Fill in the .env ([details](#dc))
 8. Run 'npm i'
 9. Run 'npx ts-node main.ts'
-10. Access to the deployed server (e.g. xxx.onrender.com)
+10. Access to the deployed server with a web browser (e.g. xxx.onrender.com)
 
 <a id="dc"></a>
 
