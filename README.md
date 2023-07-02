@@ -2,7 +2,7 @@
 
 ## Only in a local network
 
-1. Build and run the Dockerfile in the root
+1. Build and run the Dockerfile in the root (Pass '-p 8080:8080' at runtime)
 2. Copy .example.env in /muter and rename it to .env
 3. Fill in the .env ([details](#dc))
 4. Run 'npm i'
