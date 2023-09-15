@@ -48,4 +48,4 @@ SERVER_HOST_PORT and WEBSOCKET_SCHEME need not be changed from .example.env if u
 
 If used from outside local networks, SERVER_HOST_PORT should be the hostname of the server you deployed to.
 
-WEBSOCKET_SCHEME can basically be changed to wss.
+If you are deploying on render.com, change WEBSOCKET_SCHEME to wss.
