@@ -20,7 +20,7 @@ const watch_and_handle_mute_request = () => {
 
         // Measures to be taken for servers that stop without regular access
         setInterval(() => {
-            axios.get(`http://${process.env.SERVER_HOSTNAME}/ok`);
+            axios.get(`http://${process.env.SERVER_HOST_PORT}/ok`);
         }, 300000 /* 5 minutes */);
 
         dc.on("VOICE_SETTINGS_UPDATE", (vs: VoiceSettings) => {
